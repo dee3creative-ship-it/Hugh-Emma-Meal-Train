@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hugh &amp; Emma's Meal Train</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style id="page-style">
+  :root {
+    box-sizing: border-box;
+    --bg: #1F2E28;
+    --surface: #28392F;
+    --surface-2: #32463A;
+    --accent: #E8A33D;
+    --accent-ink: #241A08;
+    --accent-2: #C1543C;
+    --text: #F3EDE0;
+    --text-muted: #A9BBAE;
+    --border: rgba(243,237,224,0.14);
+    --shadow: rgba(0,0,0,0.25);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #FBF6EA;
+      --surface: #FFFFFF;
+      --surface-2: #F1E8D2;
+      --accent: #C97C1F;
+      --accent-ink: #FFF9EE;
+      --accent-2: #A8402C;
+      --text: #23302A;
+      --text-muted: #5B6E63;
+      --border: rgba(35,48,42,0.14);
+      --shadow: rgba(35,48,42,0.12);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #FBF6EA;
+    --surface: #FFFFFF;
+    --surface-2: #F1E8D2;
+    --accent: #C97C1F;
+    --accent-ink: #FFF9EE;
+    --accent-2: #A8402C;
+    --text: #23302A;
+    --text-muted: #5B6E63;
+    --border: rgba(35,48,42,0.14);
+    --shadow: rgba(35,48,42,0.12);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; margin: 0; letter-spacing: -0.01em; }
+  a { color: inherit; }
+  button { font-family: inherit; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 80px; }
+
+  header.hero {
+    padding: 56px 20px 40px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .hero-icon { width: 42px; height: 42px; color: var(--accent); margin-bottom: 18px; }
+  .kicker { font-size: 0.95rem; color: var(--text-muted); margin: 0 0 6px; }
+  h1.title { font-size: clamp(1.9rem, 5.5vw, 2.7rem); font-weight: 600; line-height: 1.08; }
+  .title .amp { color: var(--accent); font-style: italic; }
+  .subtitle { color: var(--text-muted); font-size: 1.05rem; max-width: 46ch; margin-top: 14px; }
+
+  section { margin-top: 32px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  h2.section-title { font-size: 1.25rem; font-weight: 600; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  /* Preferences */
+  .pref-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .pref-item .pref-label { font-size: 0.82rem; text-transform: none; color: var(--text-muted); margin-bottom: 3px; }
+  .pref-item .pref-value { font-size: 0.98rem; }
+  .pref-value.empty { color: var(--text-muted); font-style: italic; }
+  .pref-item.allergy .pref-value { color: var(--accent-2); font-weight: 600; }
+
+  /* Progress */
+  .progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .progress-track { flex: 1; height: 8px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 5px; transition: width .4s ease; }
+  .progress-label { font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; }
+  .progress-note { font-size: 0.92rem; color: var(--text-muted); margin-top: 8px; }
+
+  /* Week groups + day rows */
+  .week-block { margin-bottom: 6px; }
+  .week-heading { font-size: 0.82rem; color: var(--text-muted); margin: 22px 0 6px; }
+  ul.day-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+  li.day-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  li.day-row.is-past { opacity: 0.55; }
+  li.day-row.is-today { background: color-mix(in srgb, var(--accent) 10%, transparent); margin: 0 -10px; padding-left: 12px; padding-right: 12px; border-radius: 8px; border-bottom-color: transparent; }
+  .day-date { width: 64px; flex-shrink: 0; }
+  .day-date .dow { display: block; font-size: 0.78rem; color: var(--text-muted); }
+  .day-date .num { display: block; font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 600; }
+  .day-info { flex: 1; min-width: 0; }
+  .day-status-open { color: var(--text-muted); font-size: 0.95rem; }
+  .day-status-claimed .who { font-weight: 600; }
+  .day-status-claimed .what { color: var(--text-muted); font-size: 0.92rem; }
+  .day-status-claimed .note { color: var(--text-muted); font-size: 0.88rem; margin-top: 2px; font-style: italic; }
+  .day-action { flex-shrink: 0; }
+
+  .badge { display: inline-block; font-size: 0.75rem; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); }
+  .badge.open { border-color: var(--accent); color: var(--accent); }
+  .badge.unavailable { color: var(--text-muted); }
+  li.day-row.is-unavailable { opacity: 0.6; }
+
+  .cal-link { background: none; border: none; color: var(--text-muted); font-size: 0.82rem; cursor: pointer; padding: 4px 0 0; text-decoration: underline; text-underline-offset: 2px; }
+  .cal-link:hover { color: var(--accent); }
+  .cal-options { display: flex; flex-direction: column; gap: 10px; }
+  .cal-option { display: block; text-align: left; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); text-decoration: none; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+  .cal-option:hover { background: var(--surface-2); }
+  .cal-option span.cal-sub { display: block; font-weight: 400; color: var(--text-muted); font-size: 0.82rem; margin-top: 2px; }
+
+  .availability-banner { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; font-size: 0.92rem; }
+  .availability-banner .label { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 3px; }
+
+  .avail-list { max-height: 40vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; }
+  .avail-week-label { font-size: 0.75rem; color: var(--text-muted); padding: 8px 12px 4px; }
+  .avail-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--border); }
+  .avail-row:first-child, .avail-week-label + .avail-row { border-top: none; }
+  .avail-row input { accent-color: var(--accent); width: 17px; height: 17px; flex-shrink: 0; }
+  .avail-row label { flex: 1; font-size: 0.92rem; cursor: pointer; }
+  .avail-row.has-signup { opacity: 0.5; }
+  .avail-row.has-signup label { cursor: default; }
+
+  button.btn {
+    border: none;
+    border-radius: 7px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.btn-primary { background: var(--accent); color: var(--accent-ink); }
+  button.btn-primary:hover { filter: brightness(1.06); }
+  button.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button.btn-ghost:hover { background: var(--surface-2); }
+  button.btn-link { background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer; padding: 6px 0; font-size: 0.92rem; }
+  button.btn-danger-link { background: none; border: none; color: var(--accent-2); font-weight: 600; cursor: pointer; padding: 6px 0; font-size: 0.85rem; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  footer.note { margin-top: 44px; color: var(--text-muted); font-size: 0.88rem; text-align: center; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,14,12,0.55);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding: 0; z-index: 50;
+  }
+  @media (min-width: 560px) {
+    .modal-overlay { align-items: center; padding: 20px; }
+  }
+  .modal-sheet {
+    background: var(--surface);
+    width: 100%; max-width: 480px;
+    border-radius: 16px 16px 0 0;
+    padding: 24px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+    max-height: 88vh; overflow-y: auto;
+    border: 1px solid var(--border);
+  }
+  @media (min-width: 560px) {
+    .modal-sheet { border-radius: 14px; }
+  }
+  .modal-sheet h3 { font-size: 1.3rem; margin-bottom: 4px; }
+  .modal-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; }
+  .field input[type=text], .field textarea, .field select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font-family: inherit; font-size: 0.98rem;
+  }
+  .field textarea { min-height: 70px; resize: vertical; }
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-option { display: flex; align-items: center; gap: 9px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+  .radio-option input { accent-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 20px; }
+  .modal-actions .right-group { display: flex; gap: 10px; }
+
+  /* Toast */
+  #toast-root { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 80; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; box-shadow: 0 6px 20px var(--shadow); }
+
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  .stoic-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; position: relative; }
+  .stoic-mark { font-family: 'Fraunces', serif; font-size: 2.6rem; color: var(--accent); line-height: 0.4; display: block; margin-bottom: 10px; }
+  .stoic-quote { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.15rem; line-height: 1.45; }
+  .stoic-attribution { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; }
+  .stoic-card .btn-link { margin-top: 10px; }
+
+  .status-screen { max-width: 720px; margin: 0 auto; padding: 80px 20px; text-align: center; color: var(--text-muted); }
+  .status-screen.is-error { color: var(--accent-2); }
+</style>
+</head>
+<body>
+<div id="app-root"><div class="status-screen">Loading the schedule&hellip;</div></div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script id="page-script">
+(function () {
+  'use strict';
+
+  var SUPABASE_URL = 'https://hegsthidkjwfhfwdzzhp.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_jCSSrvCv2txJ7ABl4pbWGg_2RC15s44';
+  var ROW_ID = 'hugh-emma';
+  var TABLE = 'meal_train_hugh_emma';
+
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var state = null;
+  var root = document.getElementById('app-root');
+  var modalRoot = document.getElementById('modal-root');
+  var toastRoot = document.getElementById('toast-root');
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function toISO(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fromISO(iso) { var p = iso.split('-'); return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)); }
+  function addDays(iso, n) { var d = fromISO(iso); d.setDate(d.getDate() + n); return toISO(d); }
+  function todayISO() { return toISO(new Date()); }
+  function dowShort(iso) { return fromISO(iso).toLocaleDateString(undefined, { weekday: 'short' }); }
+  function monthDay(iso) { return fromISO(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+  function rangeLabel(startIso, endIso) { return monthDay(startIso) + '\u2013' + monthDay(endIso); }
+
+  function escapeHTML(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  var TYPE_LABELS = {
+    homemade: 'Homemade, dropped off',
+    delivery: 'Delivery order',
+    giftcard: 'Gift card'
+  };
+
+  var STOIC_QUOTES = [
+    { text: '\u201cYou have power over your mind \u2014 not outside events.\u201d Marcus Aurelius wrote that a long time before a tendon detached. Hugh is now field-testing the theory from the couch.', by: 'Marcus Aurelius, Meditations (Hugh, currently)' },
+    { text: '\u201cThe impediment to action advances action.\u201d In practice: Hugh cannot walk to the fridge, so the fridge\u2019s contents must come to him. This is the Way.', by: 'Marcus Aurelius, loosely applied' },
+    { text: '\u201cSome things are up to us, some are not.\u201d Whether the Achilles heals on schedule: not up to us. Whether Hugh eats well in the meantime: extremely up to us.', by: 'Epictetus, Enchiridion' },
+    { text: 'Seneca argued we suffer more in imagination than in reality. Hugh, imagining six weeks on the couch, would like to test that claim empirically, with lasagna.', by: 'Seneca, probably annoyed by this comparison' },
+    { text: 'The Stoics taught that a good life means accepting what you cannot control and acting well on what you can. Hugh cannot control his tendon. He can control how many casseroles show up on his porch.', by: 'Chrysippus, unofficially endorsing meal trains' },
+    { text: '\u201cIt is not the things themselves that disturb us, but our opinions about them.\u201d Hugh\u2019s opinion of a torn Achilles is that it is bad, actually, and should be compensated for in baked goods.', by: 'Epictetus, on orthopedic injuries' }
+  ];
+  var stoicIndex = Math.floor(Math.random() * STOIC_QUOTES.length);
+
+  function renderStoicCard() {
+    var q = STOIC_QUOTES[stoicIndex];
+    return '' +
+      '<div class="stoic-card">' +
+      '<span class="stoic-mark" aria-hidden="true">\u201c</span>' +
+      '<div class="stoic-quote">' + q.text + '</div>' +
+      '<div class="stoic-attribution">\u2014 ' + q.by + '</div>' +
+      '<button class="btn-link" id="btn-more-stoic" type="button">Another word of wisdom</button>' +
+      '</div>';
+  }
+
+  function allDates() {
+    var out = [];
+    for (var i = 0; i < state.numDays; i++) out.push(addDays(state.startDate, i));
+    return out;
+  }
+
+  function claimedCount() {
+    return Object.keys(state.signups).length;
+  }
+
+  function isBlocked(iso) {
+    return (state.unavailable || []).indexOf(iso) !== -1;
+  }
+
+  function isoCompact(iso) { return iso.replace(/-/g, ''); }
+
+  function progressNote(pct) {
+    if (pct === 0) return 'Not a single day claimed yet \u2014 be the first.';
+    if (pct < 40) return 'Off to a start. Plenty of open days left.';
+    if (pct < 80) return 'Filling in nicely.';
+    if (pct < 100) return 'Almost there \u2014 just a few open days left.';
+    return 'Every day is covered. Hugh & Emma are fed.';
+  }
+
+  function renderPreferences() {
+    var p = state.preferences;
+    function row(label, value, isAllergy) {
+      var cls = 'pref-item' + (isAllergy ? ' allergy' : '');
+      var val = value && value.trim()
+        ? '<div class="pref-value">' + escapeHTML(value) + '</div>'
+        : '<div class="pref-value empty">Not shared yet</div>';
+      return '<div class="' + cls + '"><div class="pref-label">' + label + '</div>' + val + '</div>';
+    }
+    return '' +
+      '<div class="card">' +
+      '<div class="pref-grid">' +
+      row('Allergies to know about', p.allergies, true) +
+      row('Dietary restrictions', p.dietary) +
+      row('Foods they love', p.favorites) +
+      row('Foods to skip', p.dislikes) +
+      row('Drop-off notes (timing, porch, apps they use)', p.logistics) +
+      '</div>' +
+      '<button class="btn-link" id="btn-edit-prefs" type="button">Edit these notes</button>' +
+      ' &middot; ' +
+      '<button class="btn-link" id="btn-edit-availability" type="button">Set availability</button>' +
+      '</div>';
+  }
+
+  function renderProgress() {
+    var dates = allDates();
+    var done = claimedCount();
+    var neededTotal = dates.filter(function (d) { return !isBlocked(d) || state.signups[d]; }).length;
+    var total = Math.max(neededTotal, done, 1);
+    var pct = Math.round((done / total) * 100);
+    return '' +
+      '<div class="progress-row">' +
+      '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="progress-label">' + done + ' of ' + total + ' days</div>' +
+      '</div>' +
+      '<div class="progress-note">' + progressNote(pct) + '</div>';
+  }
+
+  function renderAvailabilityBanner() {
+    var note = (state.availabilityNote || '').trim();
+    if (!note) return '';
+    return '<div class="availability-banner"><div class="label">A note from Hugh &amp; Emma</div>' + escapeHTML(note) + '</div>';
+  }
+
+  function renderDayRow(iso) {
+    var signup = state.signups[iso];
+    var blocked = isBlocked(iso) && !signup;
+    var isToday = iso === todayISO();
+    var isPast = iso < todayISO() && !isToday;
+    var rowClasses = 'day-row' + (isToday ? ' is-today' : '') + (isPast && !signup ? ' is-past' : '') + (blocked ? ' is-unavailable' : '');
+    var dateBlock = '<div class="day-date"><span class="dow">' + dowShort(iso) + '</span><span class="num">' + monthDay(iso) + '</span></div>';
+    var infoBlock, actionBlock;
+
+    if (signup) {
+      infoBlock = '' +
+        '<div class="day-info">' +
+        '<div class="day-status-claimed">' +
+        '<span class="who">' + escapeHTML(signup.name) + '</span> \u2014 ' +
+        '<span class="what">' + (TYPE_LABELS[signup.type] || 'Meal') + (signup.details ? ' \u00b7 ' + escapeHTML(signup.details) : '') + '</span>' +
+        (signup.notes ? '<div class="note">' + escapeHTML(signup.notes) + '</div>' : '') +
+        '<button class="cal-link" type="button" data-cal="' + iso + '">Add to calendar</button>' +
+        '</div></div>';
+      actionBlock = '<div class="day-action"><button class="btn btn-ghost" type="button" data-edit="' + iso + '">Edit</button></div>';
+    } else if (blocked) {
+      infoBlock = '<div class="day-info"><span class="badge unavailable">Not available</span></div>';
+      actionBlock = '<div class="day-action"></div>';
+    } else {
+      infoBlock = '<div class="day-info"><span class="badge open">Open</span></div>';
+      actionBlock = '<div class="day-action"><button class="btn btn-primary" type="button" data-claim="' + iso + '">Sign up</button></div>';
+    }
+
+    return '<li class="' + rowClasses + '">' + dateBlock + infoBlock + actionBlock + '</li>';
+  }
+
+  function renderCalendar() {
+    var dates = allDates();
+    var html = '';
+    for (var w = 0; w < dates.length; w += 7) {
+      var weekDates = dates.slice(w, w + 7);
+      var label = 'Week ' + (w / 7 + 1) + ' \u00b7 ' + rangeLabel(weekDates[0], weekDates[weekDates.length - 1]);
+      html += '<div class="week-block"><div class="week-heading">' + label + '</div><ul class="day-list">';
+      for (var i = 0; i < weekDates.length; i++) html += renderDayRow(weekDates[i]);
+      html += '</ul></div>';
+    }
+    return html;
+  }
+
+  var HERO_ICON = '<svg class="hero-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<path d="M8 22h32c0 9.5-7.2 16-16 16S8 31.5 8 22Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>' +
+    '<path d="M14 22c0-6 4.5-10 10-10s10 4 10 10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+    '<path d="M24 8v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+    '<path d="M6 38h36" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+    '</svg>';
+
+  function renderApp() {
+    return '' +
+      '<header class="hero">' +
+      HERO_ICON +
+      '<p class="kicker">A meal train for</p>' +
+      '<h1 class="title">Hugh <span class="amp">&amp;</span> Emma</h1>' +
+      '<p class="subtitle">Hugh is currently practicing involuntary Stoicism, courtesy of a fully detached Achilles. He cannot walk to the fridge. He can, however, be fed by people who love him.</p>' +
+      '</header>' +
+      '<div class="wrap">' +
+      '<section id="stoic-section">' +
+      renderStoicCard() +
+      '</section>' +
+      '<section id="prefs-section">' +
+      '<div class="section-head"><h2 class="section-title">Before you sign up</h2></div>' +
+      renderPreferences() +
+      '</section>' +
+      '<section id="progress-section">' +
+      renderProgress() +
+      '</section>' +
+      '<section id="calendar-section">' +
+      '<div class="section-head"><h2 class="section-title">The schedule</h2></div>' +
+      renderAvailabilityBanner() +
+      renderCalendar() +
+      '</section>' +
+      '<footer class="note">Anyone with this link can sign up or edit a slot \u2014 keep it friendly, and reach out to the group if you need to swap a day.</footer>' +
+      '</div>';
+  }
+
+  function render() {
+    root.innerHTML = renderApp();
+    bindAppEvents();
+  }
+
+  function bindAppEvents() {
+    var claimBtns = root.querySelectorAll('[data-claim]');
+    for (var i = 0; i < claimBtns.length; i++) {
+      claimBtns[i].addEventListener('click', function (e) {
+        openClaimModal(e.currentTarget.getAttribute('data-claim'), null);
+      });
+    }
+    var editBtns = root.querySelectorAll('[data-edit]');
+    for (var j = 0; j < editBtns.length; j++) {
+      editBtns[j].addEventListener('click', function (e) {
+        var iso = e.currentTarget.getAttribute('data-edit');
+        openClaimModal(iso, state.signups[iso]);
+      });
+    }
+    var prefsBtn = document.getElementById('btn-edit-prefs');
+    if (prefsBtn) prefsBtn.addEventListener('click', openPrefsModal);
+    var availBtn = document.getElementById('btn-edit-availability');
+    if (availBtn) availBtn.addEventListener('click', openAvailabilityModal);
+    var calBtns = root.querySelectorAll('[data-cal]');
+    for (var k = 0; k < calBtns.length; k++) {
+      calBtns[k].addEventListener('click', function (e) {
+        openCalendarModal(e.currentTarget.getAttribute('data-cal'));
+      });
+    }
+    bindStoicButton();
+  }
+
+  function bindStoicButton() {
+    var stoicBtn = document.getElementById('btn-more-stoic');
+    if (!stoicBtn) return;
+    stoicBtn.addEventListener('click', function () {
+      var next = Math.floor(Math.random() * STOIC_QUOTES.length);
+      if (next === stoicIndex && STOIC_QUOTES.length > 1) next = (next + 1) % STOIC_QUOTES.length;
+      stoicIndex = next;
+      var section = document.getElementById('stoic-section');
+      if (section) section.innerHTML = renderStoicCard();
+      bindStoicButton();
+    });
+  }
+
+  function closeModal() { modalRoot.innerHTML = ''; }
+
+  function openModal(html) {
+    modalRoot.innerHTML = '<div class="modal-overlay" id="overlay"><div class="modal-sheet" role="dialog" aria-modal="true">' + html + '</div></div>';
+    var overlay = document.getElementById('overlay');
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+  }
+
+  function openClaimModal(iso, existing) {
+    var dateLabel = fromISO(iso).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    var name = existing ? existing.name : '';
+    var type = existing ? existing.type : 'homemade';
+    var details = existing ? existing.details : '';
+    var notes = existing ? existing.notes : '';
+
+    function radio(val, label) {
+      var checked = type === val ? ' checked' : '';
+      return '<label class="radio-option"><input type="radio" name="mt" value="' + val + '"' + checked + '> ' + label + '</label>';
+    }
+
+    var html = '' +
+      '<h3>' + (existing ? 'Edit' : 'Sign up for') + '</h3>' +
+      '<p class="modal-sub">' + dateLabel + '</p>' +
+      '<div class="field"><label for="f-name">Your name</label><input type="text" id="f-name" value="' + escapeHTML(name) + '" placeholder="e.g. Sam"></div>' +
+      '<div class="field"><label>What are you bringing?</label><div class="radio-group">' +
+      radio('homemade', 'Homemade meal, dropped off') +
+      radio('delivery', 'Delivery order (DoorDash, Uber Eats, etc.)') +
+      radio('giftcard', 'Gift card') +
+      '</div></div>' +
+      '<div class="field"><label for="f-details">Details</label><input type="text" id="f-details" value="' + escapeHTML(details) + '" placeholder="e.g. Chicken pot pie, or which delivery app"></div>' +
+      '<div class="field"><label for="f-notes">Note for Hugh &amp; Emma (optional)</label><textarea id="f-notes" placeholder="Drop-off time, contains nuts, etc.">' + escapeHTML(notes) + '</textarea></div>' +
+      '<div class="modal-actions">' +
+      (existing ? '<button class="btn-danger-link" id="btn-release" type="button">Release this day</button>' : '<span></span>') +
+      '<div class="right-group">' +
+      '<button class="btn btn-ghost" id="btn-cancel" type="button">Cancel</button>' +
+      '<button class="btn btn-primary" id="btn-confirm" type="button">' + (existing ? 'Save' : 'Confirm') + '</button>' +
+      '</div></div>';
+
+    openModal(html);
+    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+    if (existing) {
+      document.getElementById('btn-release').addEventListener('click', function () {
+        var next = deepClone(state);
+        delete next.signups[iso];
+        closeModal();
+        persist(next);
+        showToast('Day released back to open.');
+      });
+    }
+    document.getElementById('btn-confirm').addEventListener('click', function () {
+      var nameVal = document.getElementById('f-name').value.trim();
+      if (!nameVal) { showToast('Add your name first.'); return; }
+      var typeVal = 'homemade';
+      var checkedRadio = modalRoot.querySelector('input[name=mt]:checked');
+      if (checkedRadio) typeVal = checkedRadio.value;
+      var detailsVal = document.getElementById('f-details').value.trim();
+      var notesVal = document.getElementById('f-notes').value.trim();
+      var next = deepClone(state);
+      next.signups[iso] = { name: nameVal, type: typeVal, details: detailsVal, notes: notesVal, ts: Date.now() };
+      closeModal();
+      persist(next);
+      showToast(existing ? 'Updated.' : 'You\u2019re signed up \u2014 thank you.');
+    });
+  }
+
+  function openPrefsModal() {
+    var p = state.preferences;
+    var html = '' +
+      '<h3>Hugh &amp; Emma\u2019s notes</h3>' +
+      '<p class="modal-sub">For Hugh, Emma, or anyone close to them to fill in \u2014 friends will see this before signing up.</p>' +
+      '<div class="field"><label for="p-allergy">Allergies to know about</label><textarea id="p-allergy" placeholder="e.g. tree nuts, shellfish">' + escapeHTML(p.allergies) + '</textarea></div>' +
+      '<div class="field"><label for="p-diet">Dietary restrictions</label><textarea id="p-diet" placeholder="e.g. dairy-free, low-sodium">' + escapeHTML(p.dietary) + '</textarea></div>' +
+      '<div class="field"><label for="p-fav">Foods they love</label><textarea id="p-fav" placeholder="e.g. soups, tacos, anything spicy">' + escapeHTML(p.favorites) + '</textarea></div>' +
+      '<div class="field"><label for="p-dislike">Foods to skip</label><textarea id="p-dislike" placeholder="e.g. mushrooms, cilantro">' + escapeHTML(p.dislikes) + '</textarea></div>' +
+      '<div class="field"><label for="p-logistics">Drop-off notes</label><textarea id="p-logistics" placeholder="e.g. leave on the porch, text before you come, apps they have accounts on">' + escapeHTML(p.logistics) + '</textarea></div>' +
+      '<div class="modal-actions"><span></span><div class="right-group">' +
+      '<button class="btn btn-ghost" id="btn-cancel" type="button">Cancel</button>' +
+      '<button class="btn btn-primary" id="btn-save-prefs" type="button">Save</button>' +
+      '</div></div>';
+    openModal(html);
+    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+    document.getElementById('btn-save-prefs').addEventListener('click', function () {
+      var next = deepClone(state);
+      next.preferences = {
+        allergies: document.getElementById('p-allergy').value.trim(),
+        dietary: document.getElementById('p-diet').value.trim(),
+        favorites: document.getElementById('p-fav').value.trim(),
+        dislikes: document.getElementById('p-dislike').value.trim(),
+        logistics: document.getElementById('p-logistics').value.trim()
+      };
+      closeModal();
+      persist(next);
+      showToast('Notes updated.');
+    });
+  }
+
+  function openCalendarModal(iso) {
+    var signup = state.signups[iso];
+    if (!signup) return;
+    var dateLabel = fromISO(iso).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    var title = 'Meal from ' + signup.name;
+    var descParts = [TYPE_LABELS[signup.type] || 'Meal'];
+    if (signup.details) descParts.push(signup.details);
+    if (signup.notes) descParts.push(signup.notes);
+    var description = descParts.join(' \u2014 ');
+    var startCompact = isoCompact(iso);
+    var endCompact = isoCompact(addDays(iso, 1));
+
+    var googleUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+      '&text=' + encodeURIComponent(title) +
+      '&dates=' + startCompact + '/' + endCompact +
+      '&details=' + encodeURIComponent(description);
+
+    var outlookUrl = 'https://outlook.live.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent' +
+      '&subject=' + encodeURIComponent(title) +
+      '&startdt=' + iso +
+      '&enddt=' + addDays(iso, 1) +
+      '&allday=true' +
+      '&body=' + encodeURIComponent(description);
+
+    var html = '' +
+      '<h3>Add to calendar</h3>' +
+      '<p class="modal-sub">' + escapeHTML(title) + ' \u00b7 ' + dateLabel + '</p>' +
+      '<div class="cal-options">' +
+      '<a class="cal-option" href="' + googleUrl + '" target="_blank" rel="noopener">Google Calendar<span class="cal-sub">Opens a prefilled event to save</span></a>' +
+      '<a class="cal-option" href="' + outlookUrl + '" target="_blank" rel="noopener">Outlook<span class="cal-sub">Opens a prefilled event to save</span></a>' +
+      '<button class="cal-option" type="button" id="btn-ics">Apple Calendar or other<span class="cal-sub">Downloads a .ics file to import</span></button>' +
+      '</div>' +
+      '<div class="modal-actions"><span></span><div class="right-group"><button class="btn btn-ghost" id="btn-cancel" type="button">Close</button></div></div>';
+
+    openModal(html);
+    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+    document.getElementById('btn-ics').addEventListener('click', function () {
+      var ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\n' +
+        'UID:' + iso + '-' + Date.now() + '@meal-train\r\n' +
+        'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\r\n' +
+        'DTSTART;VALUE=DATE:' + startCompact + '\r\n' +
+        'DTEND;VALUE=DATE:' + endCompact + '\r\n' +
+        'SUMMARY:' + title.replace(/\r?\n/g, ' ') + '\r\n' +
+        'DESCRIPTION:' + description.replace(/\r?\n/g, ' ') + '\r\n' +
+        'END:VEVENT\r\nEND:VCALENDAR\r\n';
+      var blob = new Blob([ics], { type: 'text/calendar' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'meal-' + iso + '.ics';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    });
+  }
+
+  function openAvailabilityModal() {
+    var dates = allDates();
+    var blockedSet = {};
+    (state.unavailable || []).forEach(function (d) { blockedSet[d] = true; });
+    var rowsHtml = '';
+    for (var w = 0; w < dates.length; w += 7) {
+      var weekDates = dates.slice(w, w + 7);
+      rowsHtml += '<div class="avail-week-label">Week ' + (w / 7 + 1) + ' \u00b7 ' + rangeLabel(weekDates[0], weekDates[weekDates.length - 1]) + '</div>';
+      for (var i = 0; i < weekDates.length; i++) {
+        var iso = weekDates[i];
+        var hasSignup = !!state.signups[iso];
+        var checked = blockedSet[iso] ? ' checked' : '';
+        var disabled = hasSignup ? ' disabled' : '';
+        var label = dowShort(iso) + ' ' + monthDay(iso) + (hasSignup ? ' \u2014 already claimed' : '');
+        rowsHtml += '<div class="avail-row' + (hasSignup ? ' has-signup' : '') + '">' +
+          '<input type="checkbox" id="av-' + iso + '" data-avail="' + iso + '"' + checked + disabled + '>' +
+          '<label for="av-' + iso + '">' + escapeHTML(label) + '</label></div>';
+      }
+    }
+
+    var html = '' +
+      '<h3>Set your availability</h3>' +
+      '<p class="modal-sub">Check any days you won\u2019t need a meal \u2014 friends will see those as unavailable instead of open.</p>' +
+      '<div class="field"><label for="av-note">Note for friends (optional)</label><textarea id="av-note" placeholder="e.g. We\u2019ll be traveling Sept 25\u201327">' + escapeHTML(state.availabilityNote || '') + '</textarea></div>' +
+      '<div class="avail-list">' + rowsHtml + '</div>' +
+      '<div class="modal-actions"><span></span><div class="right-group">' +
+      '<button class="btn btn-ghost" id="btn-cancel" type="button">Cancel</button>' +
+      '<button class="btn btn-primary" id="btn-save-avail" type="button">Save</button>' +
+      '</div></div>';
+
+    openModal(html);
+    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+    document.getElementById('btn-save-avail').addEventListener('click', function () {
+      var checks = modalRoot.querySelectorAll('input[data-avail]:checked');
+      var newUnavailable = [];
+      for (var c = 0; c < checks.length; c++) newUnavailable.push(checks[c].getAttribute('data-avail'));
+      var next = deepClone(state);
+      next.unavailable = newUnavailable;
+      next.availabilityNote = document.getElementById('av-note').value.trim();
+      closeModal();
+      persist(next);
+      showToast('Availability updated.');
+    });
+  }
+
+  function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+  function showToast(msg) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    toastRoot.appendChild(el);
+    setTimeout(function () { el.remove(); }, 3200);
+  }
+
+  async function persist(newState) {
+    var previous = state;
+    state = newState;
+    render();
+    var res = await sb.from(TABLE).update({ data: newState, updated_at: new Date().toISOString() }).eq('id', ROW_ID);
+    if (res.error) {
+      state = previous;
+      render();
+      showToast('Couldn\u2019t save \u2014 check your connection and try again.');
+    }
+  }
+
+  function showStatus(message, isError) {
+    root.innerHTML = '<div class="status-screen' + (isError ? ' is-error' : '') + '">' + escapeHTML(message) + '</div>';
+  }
+
+  async function init() {
+    var res = await sb.from(TABLE).select('data').eq('id', ROW_ID).single();
+    if (res.error || !res.data) {
+      showStatus('Couldn\u2019t load the meal train right now. Refresh to try again.', true);
+      return;
+    }
+    state = res.data.data;
+    if (!state.unavailable) state.unavailable = [];
+    if (typeof state.availabilityNote !== 'string') state.availabilityNote = '';
+    render();
+
+    sb.channel('meal_train_hugh_emma_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: TABLE, filter: 'id=eq.' + ROW_ID }, function (payload) {
+        if (payload && payload.new && payload.new.data) {
+          state = payload.new.data;
+          if (!state.unavailable) state.unavailable = [];
+          if (typeof state.availabilityNote !== 'string') state.availabilityNote = '';
+          render();
+        }
+      })
+      .subscribe();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
